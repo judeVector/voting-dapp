@@ -8,6 +8,7 @@ pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 pub mod voting {
     use super::*;
 
+    // Initialize a new poll with given parameters
     pub fn initialize_poll(
         ctx: Context<InitializePoll>,
         poll_id: u64,
@@ -25,6 +26,7 @@ pub mod voting {
         Ok(())
     }
 
+    // Add a new candidate to an existing poll
     pub fn initialize_candidate(
         ctx: Context<InitializeCandidate>,
         candidate_name: String,
@@ -38,16 +40,17 @@ pub mod voting {
         Ok(())
     }
 
+    // Cast a vote for a specific candidate
     pub fn vote(ctx: Context<Vote>, _candidate_name: String, _poll_id: u64) -> Result<()> {
         let candidate = &mut ctx.accounts.candidate;
         candidate.candidate_votes += 1;
         msg!("Voted for candidates {}", candidate.candidate_name);
         msg!("Votes: {}", candidate.candidate_votes);
-
         Ok(())
     }
 }
 
+// Account context for poll initialization
 #[derive(Accounts)]
 #[instruction(poll_id: u64)]
 pub struct InitializePoll<'info> {
@@ -59,17 +62,19 @@ pub struct InitializePoll<'info> {
         space = ANCHOR_DISCRIMINATOR_SIZE + Poll::INIT_SPACE,
         seeds = [poll_id.to_le_bytes().as_ref()],
         bump
-      )]
+    )]
     pub poll: Account<'info, Poll>,
     pub system_program: Program<'info, System>,
 }
 
+// Account context for candidate initialization
 #[derive(Accounts)]
 #[instruction(candidate_name: String, poll_id: u64)]
 pub struct InitializeCandidate<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
+        mut,
         seeds = [poll_id.to_le_bytes().as_ref()],
         bump
     )]
@@ -80,11 +85,12 @@ pub struct InitializeCandidate<'info> {
         space = ANCHOR_DISCRIMINATOR_SIZE + Candidate::INIT_SPACE,
         seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
         bump
-      )]
+    )]
     pub candidate: Account<'info, Candidate>,
     pub system_program: Program<'info, System>,
 }
 
+// Account context for voting
 #[derive(Accounts)]
 #[instruction(candidate_name: String, poll_id: u64)]
 pub struct Vote<'info> {
@@ -95,7 +101,6 @@ pub struct Vote<'info> {
         bump
     )]
     pub poll: Account<'info, Poll>,
-
     #[account(
         mut,
         seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
@@ -104,6 +109,7 @@ pub struct Vote<'info> {
     pub candidate: Account<'info, Candidate>,
 }
 
+// Candidate account structure
 #[account]
 #[derive(InitSpace)]
 pub struct Candidate {
@@ -112,6 +118,7 @@ pub struct Candidate {
     pub candidate_votes: u64,
 }
 
+// Poll account structure
 #[account]
 #[derive(InitSpace)]
 pub struct Poll {
